@@ -5,7 +5,7 @@
       "app_key": "application.generated.unity.mawp_vr.exe",
       "launch_type": "url",
       "url": "steam://launch/",
-      "action_manifest_path": "D:\\Users\\Anuj Sharma\\Documents\\MidAirWeightPerception\\MAWP_VR\\Assets\\StreamingAssets\\SteamVR\\actions.json",
+      "action_manifest_path": "D:\\Users\\Anuj Sharma\\Documents\\MidAirWeightPerception\\MidAirWeightPerception\\Assets\\StreamingAssets\\SteamVR\\actions.json",
       "strings": {
         "en_us": {
           "name": "MAWP_VR [Testing]"
