@@ -1,1 +1,0 @@
-Ultrahaptics Core Asset for Unity - v1.0.0-beta9-1ff9a9f1
