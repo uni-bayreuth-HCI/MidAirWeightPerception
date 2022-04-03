@@ -1,89 +1,82 @@
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
-using TMPro;
+using System.Linq;
 using Ultrahaptics;
-using System.Timers;
+using TMPro;
 using Valve.VR;
 
-public class motionWP : MonoBehaviour
+
+public class MotionWP2 : MonoBehaviour
 {
     public SteamVR_ActionSet m_ActionSet;
     public SteamVR_Action_Boolean m_BooleanAction;
-    public float intensity = 1.0f;
+    public float intensity = 0.7f;
+
+    AmplitudeModulationEmitter _emitter;
+    bool sphereEnabled = false;
+    List<string> currentCollisions = new List<string>();
 
     TextMeshPro mText;
-    AmplitudeModulationEmitter _emitter;
 
-    List<string> currentCollisions = new List<string>();
-    bool ExpStarted = false;
-
-
+    // Start is called before the first frame update
     void Start()
     {
-
-        m_BooleanAction = SteamVR_Actions._default.GrabPinch;
-
-        GameObject sphere = GameObject.Find("Sphere");
-        sphere.GetComponent<Rigidbody>().useGravity = false;
-
-        //ultrahaptics
-        // Initialize the emitter
-        _emitter = new AmplitudeModulationEmitter();
-        _emitter.initialize();
-
-
-        mText = GameObject.Find("Text (TMP)").GetComponent<TextMeshPro>();
-        mText.text = "Welcome to the Haptics User Study. AI8(Serious Games) University Of Bayreuth. Please place your left hand on white paper, and make sure it is detected correctly in the scene.";
+         m_BooleanAction = SteamVR_Actions._default.GrabPinch;
     }
 
-
-
     // Update is called once per frame
-    private void Update()
+    void Update()
     {
-        GameObject leftHand = GameObject.Find("LoPoly Rigged Hand Left");
-        GameObject sphere = GameObject.Find("Sphere");
-        
-        if (leftHand != null && !ExpStarted) {
-            mText.text = "Now press the trigger button, first ball will fall on your hand.";
-        }
-        if (m_BooleanAction.stateDown)
+        GameObject sphere = GameObject.Find("Sphere1");
+        if (m_BooleanAction.stateDown && sphereEnabled)
         {
+            print("state down");
+            if (_emitter == null) {
+                print("emitter null");
+                _emitter = new AmplitudeModulationEmitter();
+                _emitter.initialize();
+            }
+            
+            GameObject leftHand = GameObject.Find("LoPoly Rigged Hand Left");
             /*if left hand is null and left hand is active and sphere gravity is disabled then enable gravity*/
             if (leftHand != null && leftHand.activeSelf && !sphere.GetComponent<Rigidbody>().useGravity && (sphere.transform.position.y < 4))
             {
-                ExpStarted = true;
+                print("use gravity true");
                 sphere.GetComponent<Rigidbody>().useGravity = true;
                 StartCoroutine(DisableSphereCoroutine(sphere));
-
-            }
-            else if (leftHand == null) {
-                mText.text = "Please make sure your LEFT hand is visible above the paper on desk. Sometimes, the device detects wrong hand, remove your hand and place it again.";
             }
         }
     }
 
-    IEnumerator DisableSphereCoroutine(GameObject sphere)
-    {
-        mText.text = "This ball will be on your hand for 30 seconds, and then it will disappear.";
-        yield return new WaitForSeconds(30);
-        /**/
+    public void CalledFromMotionWP() {
+        print("going inside update");
+    }
 
-        sphere.transform.position = new UnityEngine.Vector3(-1.51f, 9.09f, 2.298f);
-        sphere.GetComponent<Rigidbody>().useGravity = false;
+    public void StartScene() {
+        mText = GameObject.Find("Text (TMP)").GetComponent<TextMeshPro>();
+        print("motion WP functionh called");
+        mText.text = "This is the 2nd ball in front of you. Press the trigger button again to make it fall on your hand.";
+        sphereEnabled = true;
+        GameObject sphere = GameObject.Find("Sphere1");
+        sphere.transform.position = new UnityEngine.Vector3(-1.51647103f, 1.30900002f, 2.29871488f);
 
-        GameObject sphere1 = GameObject.Find("Sphere1");
-        sphere1.GetComponent<MotionWP2>().StartScene();
-
-        yield return new WaitForSeconds(1);
-        _emitter.Dispose();
-        _emitter = null;
-        
     }
 
 
+    IEnumerator DisableSphereCoroutine(GameObject sphere)
+    {
+        mText.text = "This ball will be on your hand for 30 seconds too, and then it will disappear.";
+        yield return new WaitForSeconds(30);
+        /**/
+        sphere.GetComponent<Rigidbody>().useGravity = false;
+        sphere.transform.position = new UnityEngine.Vector3(-1.51647103f, 11.30900002f, 2.29871488f);
+
+        mText.text = "Thank you, the study is over please answer the questions provided by us about this scene";
+        yield return new WaitForSeconds(40);
+        Destroy(sphere);
+
+    }
 
     void OnCollisionEnter(Collision collision)
     {
@@ -98,8 +91,7 @@ public class motionWP : MonoBehaviour
             Ultrahaptics.Vector3 position = new Ultrahaptics.Vector3(0.0f, 0.0f, 0.2f);
             // Create a control point object using this position, with full intensity, at 200Hz
 
-
-            AmplitudeModulationControlPoint point = new AmplitudeModulationControlPoint(position, 1.0f, 200.0f);
+            AmplitudeModulationControlPoint point = new AmplitudeModulationControlPoint(position, intensity, 200.0f);
             // Output this point; technically we don't need to do this every update since nothing is changing.
             _emitter.update(new List<AmplitudeModulationControlPoint> { point });
 
@@ -122,8 +114,6 @@ public class motionWP : MonoBehaviour
         }
 
 
-
-
     }
 
 
@@ -137,16 +127,19 @@ public class motionWP : MonoBehaviour
 
     }
 
-    /*void OnDisable()
+    void OnDisable()
     {
+        print("disable called");
         _emitter.stop();
+        
     }
 
     // Ensure the emitter is immediately disposed when destroyed
     void OnDestroy()
     {
+        print("destroy called");
         _emitter.Dispose();
         _emitter = null;
-    }*/
+    }
 
 }
