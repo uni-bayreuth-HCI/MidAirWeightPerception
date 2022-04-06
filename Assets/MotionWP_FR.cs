@@ -7,11 +7,11 @@ using Ultrahaptics;
 using System.Timers;
 using Valve.VR;
 
-public class motionWP : MonoBehaviour
+public class MotionWP_FR : MonoBehaviour
 {
     public SteamVR_ActionSet m_ActionSet;
     public SteamVR_Action_Boolean m_BooleanAction;
-    public float intensity = 1.0f;
+    public float frequency = 200f;
 
     TextMeshPro mText;
     AmplitudeModulationEmitter _emitter;
@@ -45,8 +45,9 @@ public class motionWP : MonoBehaviour
     {
         GameObject leftHand = GameObject.Find("LoPoly Rigged Hand Left");
         GameObject sphere = GameObject.Find("Sphere");
-        
-        if (leftHand != null && !ExpStarted) {
+
+        if (leftHand != null && !ExpStarted)
+        {
             mText.text = "Now press the trigger button, first ball will fall on your hand.";
         }
         if (m_BooleanAction.stateDown)
@@ -59,7 +60,8 @@ public class motionWP : MonoBehaviour
                 StartCoroutine(DisableSphereCoroutine(sphere));
 
             }
-            else if (leftHand == null) {
+            else if (leftHand == null)
+            {
                 mText.text = "Please place your left hand on white paper, and make sure it is detected correctly in the scene. If right hand is detected, then remove and keep again.";
             }
         }
@@ -75,19 +77,19 @@ public class motionWP : MonoBehaviour
         sphere.GetComponent<Rigidbody>().useGravity = false;
 
         GameObject sphere1 = GameObject.Find("Sphere1");
-        sphere1.GetComponent<MotionWP2>().StartScene();
+        sphere1.GetComponent<MotionWP_FR2>().StartScene();
 
         yield return new WaitForSeconds(1);
         _emitter.Dispose();
         _emitter = null;
-        
+
     }
 
 
 
     void OnCollisionEnter(Collision collision)
     {
-        //
+
         currentCollisions.Add(collision.gameObject.name);
     }
     private void OnCollisionStay(Collision collision)
@@ -99,7 +101,7 @@ public class motionWP : MonoBehaviour
             // Create a control point object using this position, with full intensity, at 200Hz
 
 
-            AmplitudeModulationControlPoint point = new AmplitudeModulationControlPoint(position, 1.0f, 200.0f);
+            AmplitudeModulationControlPoint point = new AmplitudeModulationControlPoint(position, 0.9f, 200f);
             // Output this point; technically we don't need to do this every update since nothing is changing.
             _emitter.update(new List<AmplitudeModulationControlPoint> { point });
 
