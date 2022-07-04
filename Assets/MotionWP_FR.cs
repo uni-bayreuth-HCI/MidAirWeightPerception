@@ -34,7 +34,7 @@ public class MotionWP_FR : MonoBehaviour
         _emitter.initialize();
 
 
-        mText = GameObject.Find("Text (TMP)").GetComponent<TextMeshPro>();
+        mText = GameObject.Find("TextInstructions").GetComponent<TextMeshPro>();
         mText.text = "Welcome to the Haptics User Study. AI8(Serious Games) University Of Bayreuth. Press trigger button to continue.";
     }
 
@@ -69,8 +69,8 @@ public class MotionWP_FR : MonoBehaviour
 
     IEnumerator DisableSphereCoroutine(GameObject sphere)
     {
-        mText.text = "This ball will be on your hand for 30 seconds, and then it will disappear.";
-        yield return new WaitForSeconds(30);
+        mText.text = "This ball will be on your hand for a few, and then it will disappear.";
+        yield return new WaitForSeconds(0.8f);
         /**/
 
         sphere.transform.position = new UnityEngine.Vector3(-1.51f, 9.09f, 2.298f);
@@ -79,7 +79,7 @@ public class MotionWP_FR : MonoBehaviour
         GameObject sphere1 = GameObject.Find("Sphere1");
         sphere1.GetComponent<MotionWP_FR2>().StartScene();
 
-        yield return new WaitForSeconds(1);
+        yield return new WaitForSeconds(0.5f);
         _emitter.Dispose();
         _emitter = null;
 
@@ -101,7 +101,8 @@ public class MotionWP_FR : MonoBehaviour
             // Create a control point object using this position, with full intensity, at 200Hz
 
 
-            AmplitudeModulationControlPoint point = new AmplitudeModulationControlPoint(position, 0.9f, 200f);
+            AmplitudeModulationControlPoint point = new AmplitudeModulationControlPoint(position, 1f, 90f);
+            
             // Output this point; technically we don't need to do this every update since nothing is changing.
             _emitter.update(new List<AmplitudeModulationControlPoint> { point });
 
@@ -139,16 +140,6 @@ public class MotionWP_FR : MonoBehaviour
 
     }
 
-    /*void OnDisable()
-    {
-        _emitter.stop();
-    }
-
-    // Ensure the emitter is immediately disposed when destroyed
-    void OnDestroy()
-    {
-        _emitter.Dispose();
-        _emitter = null;
-    }*/
+    
 
 }
