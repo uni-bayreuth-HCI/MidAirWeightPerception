@@ -4,8 +4,9 @@ using System.Linq;
 using UnityEngine;
 using TMPro;
 using Ultrahaptics;
-using System.Timers;
 using Valve.VR;
+using Valve.VR.Extras;
+using System.IO;
 
 public class MotionWP_FR : MonoBehaviour
 {
@@ -17,16 +18,27 @@ public class MotionWP_FR : MonoBehaviour
     AmplitudeModulationEmitter _emitter;
 
     List<string> currentCollisions = new List<string>();
-    bool ExpStarted = false;
 
+    private float intensity;
+    private float intensity2;
+    private bool firstSphereProcessed = false;
+    public SteamVR_LaserPointer laserPointer;
+
+    Stack<float[]> contentStack = new Stack<float[]>();
+    
+    GameObject buttons;
+    
+    float[] currentValues;
+    Dictionary<float[], float> answers = new Dictionary<float[], float>();
+    private string selected;
+    private bool answering = false;
+    private bool processingBalls = false;
 
     void Start()
     {
-
+        
+        FillIntensityValues();
         m_BooleanAction = SteamVR_Actions._default.GrabPinch;
-
-        GameObject sphere = GameObject.Find("Sphere");
-        sphere.GetComponent<Rigidbody>().useGravity = false;
 
         //ultrahaptics
         // Initialize the emitter
@@ -35,7 +47,11 @@ public class MotionWP_FR : MonoBehaviour
 
 
         mText = GameObject.Find("TextInstructions").GetComponent<TextMeshPro>();
-        mText.text = "Welcome to the Haptics User Study. AI8(Serious Games) University Of Bayreuth. Press trigger button to continue.";
+        mText.text = "Welcome to the Haptics User Study.";
+        buttons = GameObject.Find("Buttons");
+        buttons.SetActive(false);
+
+        laserPointer.PointerIn += PointerInside;
     }
 
 
@@ -43,48 +59,116 @@ public class MotionWP_FR : MonoBehaviour
     // Update is called once per frame
     private void Update()
     {
-        GameObject leftHand = GameObject.Find("LoPoly Rigged Hand Left");
-        GameObject sphere = GameObject.Find("Sphere");
-
-        if (leftHand != null && !ExpStarted)
-        {
-            mText.text = "Now press the trigger button, first ball will fall on your hand.";
-        }
         if (m_BooleanAction.stateDown)
         {
-            /*if left hand is null and left hand is active and sphere gravity is disabled then enable gravity*/
-            if (leftHand != null && leftHand.activeSelf && !sphere.GetComponent<Rigidbody>().useGravity && (sphere.transform.position.y < 4))
-            {
-                ExpStarted = true;
-                sphere.GetComponent<Rigidbody>().useGravity = true;
-                StartCoroutine(DisableSphereCoroutine(sphere));
-
-            }
-            else if (leftHand == null)
-            {
-                mText.text = "Please place your left hand on white paper, and make sure it is detected correctly in the scene. If right hand is detected, then remove and keep again.";
-            }
+            TriggerButtonClicked();
         }
     }
 
-    IEnumerator DisableSphereCoroutine(GameObject sphere)
+    private void TriggerButtonClicked()
     {
-        mText.text = "This ball will be on your hand for a few, and then it will disappear.";
-        yield return new WaitForSeconds(0.8f);
-        /**/
 
-        sphere.transform.position = new UnityEngine.Vector3(-1.51f, 9.09f, 2.298f);
+        if (IsButtonClicked())
+        {
+            return;
+        }
+
+        GameObject leftHand = GameObject.Find("LoPoly Rigged Hand Left");
+        /*if left hand is null and left hand is active and sphere gravity is disabled then enable gravity*/
+        if (leftHand != null && leftHand.activeSelf && !answering)
+        {
+            
+            if (firstSphereProcessed)
+            {
+                StartCoroutine(ProcessSecondBall());
+            }
+            else
+            {
+                StartCoroutine(ProcessFirstBall());
+            }
+        }
+        else if (leftHand == null)
+        {
+            mText.text = "Please place your left hand on white paper, and make sure it is detected correctly in the scene. Try to remove and keep the hand again, or spread your fingers";
+        }
+    }
+
+    private bool IsButtonClicked()
+    {
+        if (selected == "BallButton1" || selected == "BallButton2")
+        {
+            if (selected == "BallButton1")
+            {
+                answers.Add(currentValues, currentValues[0]);
+            }
+            else if (selected == "BallButton2")
+            {
+                answers.Add(currentValues, currentValues[1]);
+            }
+            answering = false;
+
+            buttons.SetActive(false);
+
+            firstSphereProcessed = false;
+            mText.text = "This is the first ball for the new case. please press trigger button to make it fall on your hand.";
+            if (contentStack.Count == 0)
+            {
+                mText.text = "Game Over.";
+                File.AppendAllText(@"D://Users/Anuj Sharma/Documents/MidAirWeightPerception/MidAirWeightPerception/answers.json", Valve.Newtonsoft.Json.JsonConvert.SerializeObject(answers) + System.Environment.NewLine);
+            }
+
+            
+            return true;
+        }
+
+        return false;
+    }
+
+
+    IEnumerator ProcessFirstBall()
+    {
+        GameObject sphere = GameObject.Find("Sphere");
+        currentValues = contentStack.Pop();
+        intensity = currentValues[0];
+        intensity2 = currentValues[1];
+        mText.text = "This ball will be on your hand for 2 seconds, and then it will disappear.";
+        //print("Inside Sphere Coroutine");
+        sphere.GetComponent<Rigidbody>().useGravity = true;
+        //print("Gravity True");
+        yield return new WaitForSeconds(2f);
+
+        sphere.transform.position = new UnityEngine.Vector3(-1.20899999f, 1.27199996f, 1421);
         sphere.GetComponent<Rigidbody>().useGravity = false;
-
-        GameObject sphere1 = GameObject.Find("Sphere1");
-        sphere1.GetComponent<MotionWP_FR2>().StartScene();
-
-        yield return new WaitForSeconds(0.5f);
-        _emitter.Dispose();
-        _emitter = null;
+        
+        _emitter.stop();
+        mText.text = "This is the second ball, press the trigger button to make it fall on your hand.";
+        firstSphereProcessed = true;
 
     }
 
+
+    
+    IEnumerator ProcessSecondBall()
+    {
+        GameObject sphere = GameObject.Find("Sphere");
+        intensity = intensity2;
+        print("processing second ball");
+        mText.text = "This ball will be on your hand for 2 seconds, and then it will disappear.";
+        //print("Inside Sphere Coroutine");
+        sphere.GetComponent<Rigidbody>().useGravity = true;
+        //print("Gravity True");
+        yield return new WaitForSeconds(2f);
+
+        sphere.transform.position = new UnityEngine.Vector3(-1.20899999f, 1.27199996f, 1421);
+        sphere.GetComponent<Rigidbody>().useGravity = false;
+        //Vector3(-1.20899999, 1.27199996, 1421)
+        _emitter.stop();
+        answering = true;
+        //print("Which ball was heavy");
+        mText.text = "Which ball was heavier?";
+        buttons.SetActive(true);
+
+    }
 
 
     void OnCollisionEnter(Collision collision)
@@ -92,41 +176,28 @@ public class MotionWP_FR : MonoBehaviour
 
         currentCollisions.Add(collision.gameObject.name);
     }
+
     private void OnCollisionStay(Collision collision)
     {
         if (collision.gameObject.name == "Contact Fingerbone" || collision.gameObject.name == "Contact Palm Bone")
         {
-
             Ultrahaptics.Vector3 position = new Ultrahaptics.Vector3(0.0f, 0.0f, 0.2f);
-            // Create a control point object using this position, with full intensity, at 200Hz
-
-
-            AmplitudeModulationControlPoint point = new AmplitudeModulationControlPoint(position, 1f, 90f);
-            
-            // Output this point; technically we don't need to do this every update since nothing is changing.
+            AmplitudeModulationControlPoint point = new AmplitudeModulationControlPoint(position, intensity, 180f);
             _emitter.update(new List<AmplitudeModulationControlPoint> { point });
-
         }
-
     }
 
     private void OnCollisionExit(Collision collision)
     {
-
-
         // Remove the GameObject collided with from the list.
         currentCollisions.Remove(collision.gameObject.name);
         // Print the entire list to the console.
 
         if (!IsobjectStillTouchingHand())
         {
-            /*print("on collision exit hand");*/
+            //print("on collision exit hand");
             _emitter.stop();
         }
-
-
-
-
     }
 
 
@@ -137,9 +208,32 @@ public class MotionWP_FR : MonoBehaviour
             return true;
         }
         return false;
-
     }
 
+    public void PointerInside(object sender, PointerEventArgs e)
+    {
+        selected = e.target.name;
+    }
     
+
+    private void FillIntensityValues() {
+        float[] arr1 = new float[2] { 0.6f, 0.8f };
+        float[] arr2 = new float[2] { 1.0f, 0.8f };
+        float[] arr3 = new float[2] { 0.6f, 1.0f };
+        float[] arr4 = new float[2] { 0.5f, 1.0f };
+        float[] arr5 = new float[2] { 0.5f, 0.6f };
+        float[] arr6 = new float[2] { 0.7f, 0.6f };
+        float[] arr7 = new float[2] { 0.7f, 0.9f };
+        contentStack.Push(arr1);
+        contentStack.Push(arr2);
+        contentStack.Push(arr3);
+        contentStack.Push(arr4);
+        contentStack.Push(arr5);
+        contentStack.Push(arr6);
+        contentStack.Push(arr7);
+    }
+
+
+
 
 }
