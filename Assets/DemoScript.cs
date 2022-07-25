@@ -8,13 +8,13 @@ using Valve.VR;
 using Valve.VR.Extras;
 using System.IO;
 
-public class MotionWP_FR : MonoBehaviour
+public class DemoScript : MonoBehaviour
 {
     public SteamVR_ActionSet m_ActionSet;
     public SteamVR_Action_Boolean m_BooleanAction;
     public float frequency = 200f;
     public bool experiment_over = false;
-    public bool enableGravity = false;
+
 
     TextMeshPro mText;
     TextMeshPro gameText;
@@ -28,7 +28,7 @@ public class MotionWP_FR : MonoBehaviour
     public SteamVR_LaserPointer laserPointer;
 
     Stack<float[]> contentStack = new Stack<float[]>();
-    float[] intensities = new float[] {0.6f, 0.7f, 0.8f, 0.9f, 1f};
+    float[] intensities = new float[] { 0.6f, 0.7f, 0.8f, 0.9f, 1f };
 
 
     GameObject buttons;
@@ -47,7 +47,7 @@ public class MotionWP_FR : MonoBehaviour
     {
 
         FillIntensityValues();
-        
+
         m_BooleanAction = SteamVR_Actions._default.GrabPinch;
 
         //ultrahaptics
@@ -65,6 +65,7 @@ public class MotionWP_FR : MonoBehaviour
         buttons.SetActive(false);
         startButton.SetActive(false);
         dynamicObject.SetActive(false);
+
 
         gameText = GameObject.Find("GameInstructions").GetComponent<TextMeshPro>();
 
@@ -84,7 +85,7 @@ public class MotionWP_FR : MonoBehaviour
 
     private void TriggerButtonClicked()
     {
-       
+
         if (IsButtonClicked())
         {
             return;
@@ -96,6 +97,7 @@ public class MotionWP_FR : MonoBehaviour
         {
             if (!experiment_over)
             {
+
                 if (firstSphereProcessed)
                 {
                     StartCoroutine(ProcessSecondBall());
@@ -105,6 +107,12 @@ public class MotionWP_FR : MonoBehaviour
                     StartCoroutine(ProcessFirstBall());
                 }
             }
+            else
+            {
+                sphere.GetComponent<Rigidbody>().useGravity = true;
+            }
+
+
         }
         else if (leftHand == null)
         {
@@ -125,6 +133,7 @@ public class MotionWP_FR : MonoBehaviour
                 answers.Add(currentValues, currentValues[1]);
             }
             answering = false;
+
             buttons.SetActive(false);
 
             firstSphereProcessed = false;
@@ -132,11 +141,11 @@ public class MotionWP_FR : MonoBehaviour
             if (contentStack.Count == 0)
             {
                 File.AppendAllText(@"D://Users/Anuj Sharma/Documents/MidAirWeightPerception/MidAirWeightPerception/answers.json", Valve.Newtonsoft.Json.JsonConvert.SerializeObject(answers) + System.Environment.NewLine);
+
                 experiment_over = true;
                 mText.fontSize = 8;
-                mText.text = "Experiment is over. We will start the game now. In the game, throw the ball above using your fingers and make the ball touch the magic cube above. Ball will magically change weight as it touch the brick above. Click start button whenever you are ready.";
+                mText.text = "This was one part of the experiment. We will start the game now. In the game, throw the ball above using your fingers and make the ball touch the magic cube above. Ball will magically change weight as it touch the brick above. Click ready button whenever you are ready.";
 
-                sphere.transform.position = new UnityEngine.Vector3(-1.20899999f, 1.06599998f, 1421f);
                 sphere.transform.position = new UnityEngine.Vector3(-1.20899999f, 1.06599998f, 1421f);
 
                 dynamicObject.SetActive(true);
@@ -147,10 +156,11 @@ public class MotionWP_FR : MonoBehaviour
 
             return true;
         }
-        if (selected == "StartButton") {
-            
+        if (selected == "StartButton")
+        {
+
             startButton.SetActive(false);
-            
+            intensity = 0.6f;
             sphere = GameObject.Find("Sphere");
             sphere.GetComponent<Rigidbody>().useGravity = true;
             mText.text = "";
@@ -207,23 +217,24 @@ public class MotionWP_FR : MonoBehaviour
 
     void OnCollisionEnter(Collision collision)
     {
-        currentCollisions.Add(collision.gameObject.name);
 
-        if (collision.gameObject.name == "ComputerDesk" || collision.gameObject.name == "PaperTray") {
-            if (experiment_over) {
+        if (collision.gameObject.name == "ComputerDesk" || collision.gameObject.name == "PaperTray")
+        {
+            if (experiment_over)
+            {
                 sphere.transform.position = new UnityEngine.Vector3(-1.20899999f, 1.06599998f, 1421f);
                 sphere.GetComponent<Rigidbody>().useGravity = false;
-                
-                gameText.text = "Press start button, after hand is detected";
-                startButton.SetActive(true);
+                sphere.GetComponent<Rigidbody>().constraints = RigidbodyConstraints.FreezePositionY;
+                gameText.text = "press trigger button once hand is detected";
             }
         }
-        
+        currentCollisions.Add(collision.gameObject.name);
 
-        if (collision.gameObject.name == "DynamicObject" && experiment_over) {
+        if (collision.gameObject.name == "DynamicObject")
+        {
             ChnageSphereWeight();
         }
-        
+
 
     }
 
@@ -264,43 +275,34 @@ public class MotionWP_FR : MonoBehaviour
     {
         selected = e.target.name;
     }
-    
 
-    private void FillIntensityValues() {
-        float[] arr1 = new float[2] { 0.6f, 0.8f };
-        float[] arr2 = new float[2] { 1.0f, 0.8f };
-        float[] arr3 = new float[2] { 0.6f, 1.0f };
-        float[] arr4 = new float[2] { 0.5f, 1.0f };
-        float[] arr5 = new float[2] { 0.5f, 0.6f };
-        float[] arr6 = new float[2] { 0.7f, 0.6f };
-        float[] arr7 = new float[2] { 0.7f, 0.9f };
-        //contentStack.Push(arr1);
-        //contentStack.Push(arr2);
-        //contentStack.Push(arr3);
-        //contentStack.Push(arr4);
-        //contentStack.Push(arr5);
-        //contentStack.Push(arr6);
-        contentStack.Push(arr7);
-        
+
+    private void FillIntensityValues()
+    {
+        float[] arr = new float[2] { 0.7f, 0.7f };
+        contentStack.Push(arr);
     }
-    
-    private void ChnageSphereWeight() {
-        int index = Random.Range(0, intensities.Length);
-        float difference = intensities[index] - intensity;
-        if (difference > 0)
-        {
-            gameText.text = $"Weight increased by {Mathf.Round(difference * 1000)}Gms";
-        }
-        else if (difference < 0)
-        {
-            gameText.text = $"Weight decreased by {Mathf.Round(-difference * 1000)}Gms";
-        }
-        else {
-            gameText.text = $"Weight remains the same.";
-        }
-        intensity = intensities[index];
-        
 
+    private void ChnageSphereWeight()
+    {
+        //int index = Random.Range(0, intensities.Length);
+        //float difference = intensities[index] - intensity;
+        //if (difference > 0)
+        //{
+        //    gameText.text = $"Weight increased by {Mathf.Round(difference * 1000)}Gms";
+        //}
+        //else if (difference < 0)
+        //{
+        //    gameText.text = $"Weight decreased by {Mathf.Round(-difference * 1000)}Gms";
+        //}
+        //else
+        //{
+        //    gameText.text = $"Weight remains the same.";
+        //}
+        //intensity = intensities[index];
+
+        gameText.text = $"Every time you toss the ball, and it touches the magic cube above, it will change its weight. try to toss the ball using your fingers and palm only. please dont lift your forearm.";
+        intensity = 1.0f;
     }
 
 
