@@ -8,16 +8,18 @@ using Valve.VR;
 using Valve.VR.Extras;
 using System.IO;
 
-public class MotionWP_FR : MonoBehaviour
+public class ExperimentController : MonoBehaviour
 {
     public SteamVR_ActionSet m_ActionSet;
     public SteamVR_Action_Boolean m_BooleanAction;
     public float frequency = 200f;
     public bool experiment_over = false;
     public bool enableGravity = false;
-
+    bool gameStarted = false;
+    bool reject_trigger_press = false;
     TextMeshPro mText;
-    TextMeshPro gameText;
+    TextMeshPro WeightIncreaseInst;
+    TextMeshPro WeightDecreaseInst;
     AmplitudeModulationEmitter _emitter;
 
     List<string> currentCollisions = new List<string>();
@@ -26,14 +28,13 @@ public class MotionWP_FR : MonoBehaviour
     private float intensity2;
     private bool firstSphereProcessed = false;
     public SteamVR_LaserPointer laserPointer;
-
+    UnityEngine.Vector3 originalPosition = new UnityEngine.Vector3(-1.227f, 1.27199996f, 1421.06165f);
     Stack<float[]> contentStack = new Stack<float[]>();
-    float[] intensities = new float[] {0.6f, 0.7f, 0.8f, 0.9f, 1f};
+    List<float[]> MainData = new List<float[]>();
 
 
     GameObject buttons;
     GameObject startButton;
-    GameObject dynamicObject;
     GameObject sphere;
 
 
@@ -47,7 +48,7 @@ public class MotionWP_FR : MonoBehaviour
     {
 
         FillIntensityValues();
-        
+
         m_BooleanAction = SteamVR_Actions._default.GrabPinch;
 
         //ultrahaptics
@@ -58,15 +59,19 @@ public class MotionWP_FR : MonoBehaviour
         sphere = GameObject.Find("Sphere");
 
         mText = GameObject.Find("TextInstructions").GetComponent<TextMeshPro>();
-        mText.text = "Welcome to the Haptics User Study.";
+        mText.text = "Welcome to the Haptics User Study. Press trigger buttin to star the experiment.";
         buttons = GameObject.Find("Buttons");
         startButton = GameObject.Find("StartButton");
-        dynamicObject = GameObject.Find("DynamicObject");
+        
+        
+
         buttons.SetActive(false);
         startButton.SetActive(false);
-        dynamicObject.SetActive(false);
+        
+        
 
-        gameText = GameObject.Find("GameInstructions").GetComponent<TextMeshPro>();
+        WeightIncreaseInst = GameObject.Find("WeightIncreaseInst").GetComponent<TextMeshPro>();
+        WeightDecreaseInst = GameObject.Find("WeightDecreaseInst").GetComponent<TextMeshPro>();
 
         laserPointer.PointerIn += PointerInside;
     }
@@ -76,6 +81,21 @@ public class MotionWP_FR : MonoBehaviour
     // Update is called once per frame
     private void Update()
     {
+        GameObject leftHand = GameObject.Find("LoPoly Rigged Hand Left");
+       
+        if (!sphere.GetComponent<Rigidbody>().useGravity)
+        {
+            if (!experiment_over)
+            {
+                sphere.transform.position = originalPosition;
+            }
+            else if (experiment_over)
+            {
+                sphere.transform.position = new UnityEngine.Vector3(-1.20899999f, 0.927100003f, 1421f);
+            }
+
+        }
+
         if (m_BooleanAction.stateDown)
         {
             TriggerButtonClicked();
@@ -84,11 +104,9 @@ public class MotionWP_FR : MonoBehaviour
 
     private void TriggerButtonClicked()
     {
-       
-        if (IsButtonClicked())
-        {
-            return;
-        }
+
+        if (IsButtonClicked()){return;}
+        if (reject_trigger_press) { print("stopped wrong trigger click"); return; }
 
         GameObject leftHand = GameObject.Find("LoPoly Rigged Hand Left");
         /*if left hand is null and left hand is active and sphere gravity is disabled then enable gravity*/
@@ -129,32 +147,19 @@ public class MotionWP_FR : MonoBehaviour
 
             firstSphereProcessed = false;
             mText.text = "This is the first ball for the new case. please press trigger button to make it fall on your hand.";
-            if (contentStack.Count == 0)
+            if (MainData.Count == 0)
             {
                 File.AppendAllText(@"D://Users/Anuj Sharma/Documents/MidAirWeightPerception/MidAirWeightPerception/answers.json", Valve.Newtonsoft.Json.JsonConvert.SerializeObject(answers) + System.Environment.NewLine);
                 experiment_over = true;
                 mText.fontSize = 8;
-                mText.text = "Experiment is over. We will start the game now. In the game, throw the ball above using your fingers and make the ball touch the magic cube above. Ball will magically change weight as it touch the brick above. Click start button whenever you are ready.";
+                mText.text = "Experiment is over. Please wait we will play a game now.";
 
-                sphere.transform.position = new UnityEngine.Vector3(-1.20899999f, 1.06599998f, 1421f);
-                sphere.transform.position = new UnityEngine.Vector3(-1.20899999f, 1.06599998f, 1421f);
-
-                dynamicObject.SetActive(true);
-                startButton.SetActive(true);
-
+                sphere.transform.position = new UnityEngine.Vector3(-1.20899999f, 0.927100003f, 1421f);
             }
-
 
             return true;
         }
-        if (selected == "StartButton") {
-            
-            startButton.SetActive(false);
-            
-            sphere = GameObject.Find("Sphere");
-            sphere.GetComponent<Rigidbody>().useGravity = true;
-            mText.text = "";
-        }
+        
 
         return false;
     }
@@ -162,30 +167,33 @@ public class MotionWP_FR : MonoBehaviour
 
     IEnumerator ProcessFirstBall()
     {
-
-        currentValues = contentStack.Pop();
+        reject_trigger_press = true;
+        int index = Random.Range(0, MainData.Count);
+        currentValues = MainData[index];
         intensity = currentValues[0];
         intensity2 = currentValues[1];
         mText.text = "This ball will be on your hand for 2 seconds, and then it will disappear.";
+        MainData.RemoveAt(index);
         //print("Inside Sphere Coroutine");
         sphere.GetComponent<Rigidbody>().useGravity = true;
         //print("Gravity True");
         yield return new WaitForSeconds(2f);
 
-        sphere.transform.position = new UnityEngine.Vector3(-1.20899999f, 1.27199996f, 1421);
+        sphere.transform.position = originalPosition;
         sphere.GetComponent<Rigidbody>().useGravity = false;
+        print("gravity false 2");
 
         _emitter.stop();
         mText.text = "This is the second ball, press the trigger button to make it fall on your hand.";
         firstSphereProcessed = true;
-
+        reject_trigger_press = false;
     }
 
 
 
     IEnumerator ProcessSecondBall()
     {
-
+        reject_trigger_press = true;
         intensity = intensity2;
         print("processing second ball");
         mText.text = "This ball will be on your hand for 2 seconds, and then it will disappear.";
@@ -194,14 +202,16 @@ public class MotionWP_FR : MonoBehaviour
         //print("Gravity True");
         yield return new WaitForSeconds(2f);
 
-        sphere.transform.position = new UnityEngine.Vector3(-1.20899999f, 1.27199996f, 1421);
+        sphere.transform.position = originalPosition;
         sphere.GetComponent<Rigidbody>().useGravity = false;
+        print("gravity false 3");
         //Vector3(-1.20899999, 1.27199996, 1421)
         _emitter.stop();
         answering = true;
         //print("Which ball was heavy");
         mText.text = "Which ball was heavier?";
         buttons.SetActive(true);
+        reject_trigger_press = false;
     }
 
 
@@ -209,21 +219,20 @@ public class MotionWP_FR : MonoBehaviour
     {
         currentCollisions.Add(collision.gameObject.name);
 
-        if (collision.gameObject.name == "ComputerDesk" || collision.gameObject.name == "PaperTray") {
-            if (experiment_over) {
-                sphere.transform.position = new UnityEngine.Vector3(-1.20899999f, 1.06599998f, 1421f);
+        if (collision.gameObject.name == "NFloor")
+        {
+            if (experiment_over)
+            {
+                sphere.transform.position = new UnityEngine.Vector3(-1.20899999f, 0.927100003f, 1421f);
                 sphere.GetComponent<Rigidbody>().useGravity = false;
-                
-                gameText.text = "Press start button, after hand is detected";
-                startButton.SetActive(true);
             }
         }
-        
 
-        if (collision.gameObject.name == "DynamicObject" && experiment_over) {
-            ChnageSphereWeight();
+        if ((collision.gameObject.name == "DynamicObject" || collision.gameObject.name == "DynamicObjectBlue") && experiment_over)
+        {
+            ChnageSphereWeight(collision.gameObject.name);
         }
-        
+
 
     }
 
@@ -264,46 +273,71 @@ public class MotionWP_FR : MonoBehaviour
     {
         selected = e.target.name;
     }
-    
 
-    private void FillIntensityValues() {
-        float[] arr1 = new float[2] { 0.6f, 0.8f };
-        float[] arr2 = new float[2] { 1.0f, 0.8f };
-        float[] arr3 = new float[2] { 0.6f, 1.0f };
-        float[] arr4 = new float[2] { 0.5f, 1.0f };
-        float[] arr5 = new float[2] { 0.5f, 0.6f };
-        float[] arr6 = new float[2] { 0.7f, 0.6f };
-        float[] arr7 = new float[2] { 0.7f, 0.9f };
-        //contentStack.Push(arr1);
-        //contentStack.Push(arr2);
-        //contentStack.Push(arr3);
-        //contentStack.Push(arr4);
-        //contentStack.Push(arr5);
-        //contentStack.Push(arr6);
-        contentStack.Push(arr7);
-        
-    }
-    
-    private void ChnageSphereWeight() {
-        int index = Random.Range(0, intensities.Length);
-        float difference = intensities[index] - intensity;
-        if (difference > 0)
-        {
-            gameText.text = $"Weight increased by {Mathf.Round(difference * 1000)}Gms";
-        }
-        else if (difference < 0)
-        {
-            gameText.text = $"Weight decreased by {Mathf.Round(-difference * 1000)}Gms";
-        }
-        else {
-            gameText.text = $"Weight remains the same.";
-        }
-        intensity = intensities[index];
-        
 
+    private void FillIntensityValues()
+    {
+       
+        
+        MainData.Add(new float[2] { 0.6f, 0.8f });
+        MainData.Add(new float[2] { 1.0f, 0.8f });
+        MainData.Add(new float[2] { 0.6f, 1.0f });
+        MainData.Add(new float[2] { 0.5f, 1.0f });
+        MainData.Add(new float[2] { 0.5f, 0.6f });
+        MainData.Add(new float[2] { 0.7f, 0.6f });
+        MainData.Add(new float[2] { 0.7f, 0.9f });
+
+        MainData.Add(new float[2] { 0.8f, 0.6f});
+        MainData.Add(new float[2] { 0.8f, 1.0f });
+        MainData.Add(new float[2] { 1.0f, 0.6f });
+        MainData.Add(new float[2] { 1.0f, 0.5f });
+        MainData.Add(new float[2] { 0.6f, 0.5f });
+        MainData.Add(new float[2] { 0.6f, 0.7f });
+        MainData.Add(new float[2] { 0.9f , 0.7f });
     }
 
+    private void ChnageSphereWeight(string collisionName)
+    {
+        if (collisionName == "DynamicObject")
+        {
+            if (intensity == 1f)
+            {
 
+                mText.text = "Hurray! you have won the game. To play the game again press start button.";
+                sphere.transform.position = new UnityEngine.Vector3(-1.20899999f, 0.927100003f, 1421f);
+                gameStarted = false;
+                startButton.SetActive(true);
+                intensity = 0.8f;
+                return;
+            }
+            intensity = intensity + 0.1f;
+            WeightIncreaseInst.text = $"Weight +100Gms";
+            WeightDecreaseInst.text = $"";
+            StartCoroutine(ClearGameInst(WeightIncreaseInst));
 
+        }
+        else
+        {
+            if (intensity == 0.6f)
+            {
+                mText.text = "You have lost the game. The ball reached its minimum weight. To restart the game press start button.";
+                sphere.transform.position = new UnityEngine.Vector3(-1.20899999f, 0.927100003f, 1421f);
+                gameStarted = false;
+                startButton.SetActive(true);
+                gameStarted = false;
+                intensity = 0.8f;
+                return;
+            }
+            intensity = intensity - 0.1f;
+            WeightIncreaseInst.text = "";
+            WeightDecreaseInst.text = $"Weight -100gms";
+            StartCoroutine(ClearGameInst(WeightDecreaseInst));
+        }
+    }
 
+    IEnumerator ClearGameInst(TextMeshPro TMPObject)
+    {
+        yield return new WaitForSeconds(2f);
+        TMPObject.text = "";
+    }
 }
