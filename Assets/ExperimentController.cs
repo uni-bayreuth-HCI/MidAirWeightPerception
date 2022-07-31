@@ -21,7 +21,7 @@ public class ExperimentController : MonoBehaviour
     TextMeshPro WeightIncreaseInst;
     TextMeshPro WeightDecreaseInst;
     AmplitudeModulationEmitter _emitter;
-
+    public bool demo;
     List<string> currentCollisions = new List<string>();
 
     private float intensity;
@@ -142,6 +142,11 @@ public class ExperimentController : MonoBehaviour
             mText.text = "This is the first ball for the new case. please press trigger button to make it fall on your hand.";
             if (MainData.Count == 0)
             {
+                if (demo) {
+                    experiment_over = true;
+                    mText.text = "Demo is over do you have any questions?";
+                    return true;
+                }
                 File.AppendAllText(@"D://Users/Anuj Sharma/Documents/MidAirWeightPerception/MidAirWeightPerception/answers.json", Valve.Newtonsoft.Json.JsonConvert.SerializeObject(answers) + System.Environment.NewLine);
                 experiment_over = true;
                 mText.fontSize = 8;
@@ -219,7 +224,6 @@ public class ExperimentController : MonoBehaviour
                 sphere.GetComponent<Rigidbody>().useGravity = false;
             }
         }
-
     }
 
     private void OnCollisionStay(Collision collision)
@@ -265,6 +269,7 @@ public class ExperimentController : MonoBehaviour
     {
         MainData.Add(new float[2] { 0.6f, 0.8f });
         MainData.Add(new float[2] { 1.0f, 0.8f });
+        if (demo) { return; }
         MainData.Add(new float[2] { 0.6f, 1.0f });
         MainData.Add(new float[2] { 0.5f, 1.0f });
         MainData.Add(new float[2] { 0.5f, 0.6f });
