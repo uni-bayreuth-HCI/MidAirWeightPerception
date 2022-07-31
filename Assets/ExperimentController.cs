@@ -34,12 +34,12 @@ public class ExperimentController : MonoBehaviour
 
 
     GameObject buttons;
-    GameObject startButton;
+
     GameObject sphere;
 
 
     float[] currentValues;
-    Dictionary<float[], float> answers = new Dictionary<float[], float>();
+    Dictionary<string, string> answers = new Dictionary<string, string>();
     private string selected;
     private bool answering = false;
 
@@ -59,16 +59,10 @@ public class ExperimentController : MonoBehaviour
         sphere = GameObject.Find("Sphere");
 
         mText = GameObject.Find("TextInstructions").GetComponent<TextMeshPro>();
-        mText.text = "Welcome to the Haptics User Study. Press trigger buttin to star the experiment.";
+        mText.text = "Welcome to the Haptics User Study. Press trigger button to start the user study.";
         buttons = GameObject.Find("Buttons");
-        startButton = GameObject.Find("StartButton");
-        
-        
 
         buttons.SetActive(false);
-        startButton.SetActive(false);
-        
-        
 
         WeightIncreaseInst = GameObject.Find("WeightIncreaseInst").GetComponent<TextMeshPro>();
         WeightDecreaseInst = GameObject.Find("WeightDecreaseInst").GetComponent<TextMeshPro>();
@@ -81,18 +75,11 @@ public class ExperimentController : MonoBehaviour
     // Update is called once per frame
     private void Update()
     {
-        GameObject leftHand = GameObject.Find("LoPoly Rigged Hand Left");
-       
+
+
         if (!sphere.GetComponent<Rigidbody>().useGravity)
         {
-            if (!experiment_over)
-            {
-                sphere.transform.position = originalPosition;
-            }
-            else if (experiment_over)
-            {
-                sphere.transform.position = new UnityEngine.Vector3(-1.20899999f, 0.927100003f, 1421f);
-            }
+            sphere.transform.position = originalPosition;
 
         }
 
@@ -105,7 +92,7 @@ public class ExperimentController : MonoBehaviour
     private void TriggerButtonClicked()
     {
 
-        if (IsButtonClicked()){return;}
+        if (IsButtonClicked()) { return; }
         if (reject_trigger_press) { print("stopped wrong trigger click"); return; }
 
         GameObject leftHand = GameObject.Find("LoPoly Rigged Hand Left");
@@ -132,16 +119,22 @@ public class ExperimentController : MonoBehaviour
 
     private bool IsButtonClicked()
     {
-        if (selected == "BallButton1" || selected == "BallButton2")
+        if (selected == "BallButton1" || selected == "BallButton2" || selected == "SameWeights")
         {
             if (selected == "BallButton1")
             {
-                answers.Add(currentValues, currentValues[0]);
+                answers.Add(string.Join(", ", currentValues), currentValues[0].ToString());
             }
             else if (selected == "BallButton2")
             {
-                answers.Add(currentValues, currentValues[1]);
+                answers.Add(string.Join(", ", currentValues), currentValues[1].ToString());
+                
             }
+            else if (selected == "SameWeights")
+            {
+                answers.Add(string.Join(" ", currentValues), "Same");
+            }
+
             answering = false;
             buttons.SetActive(false);
 
@@ -154,7 +147,6 @@ public class ExperimentController : MonoBehaviour
                 mText.fontSize = 8;
                 mText.text = "Experiment is over. Please wait we will play a game now.";
 
-                sphere.transform.position = new UnityEngine.Vector3(-1.20899999f, 0.927100003f, 1421f);
             }
 
             return true;
@@ -228,12 +220,6 @@ public class ExperimentController : MonoBehaviour
             }
         }
 
-        if ((collision.gameObject.name == "DynamicObject" || collision.gameObject.name == "DynamicObjectBlue") && experiment_over)
-        {
-            ChnageSphereWeight(collision.gameObject.name);
-        }
-
-
     }
 
     private void OnCollisionStay(Collision collision)
@@ -277,8 +263,6 @@ public class ExperimentController : MonoBehaviour
 
     private void FillIntensityValues()
     {
-       
-        
         MainData.Add(new float[2] { 0.6f, 0.8f });
         MainData.Add(new float[2] { 1.0f, 0.8f });
         MainData.Add(new float[2] { 0.6f, 1.0f });
@@ -287,57 +271,13 @@ public class ExperimentController : MonoBehaviour
         MainData.Add(new float[2] { 0.7f, 0.6f });
         MainData.Add(new float[2] { 0.7f, 0.9f });
 
-        MainData.Add(new float[2] { 0.8f, 0.6f});
+        MainData.Add(new float[2] { 0.8f, 0.6f });
         MainData.Add(new float[2] { 0.8f, 1.0f });
         MainData.Add(new float[2] { 1.0f, 0.6f });
         MainData.Add(new float[2] { 1.0f, 0.5f });
         MainData.Add(new float[2] { 0.6f, 0.5f });
         MainData.Add(new float[2] { 0.6f, 0.7f });
-        MainData.Add(new float[2] { 0.9f , 0.7f });
+        MainData.Add(new float[2] { 0.9f, 0.7f });
     }
 
-    private void ChnageSphereWeight(string collisionName)
-    {
-        if (collisionName == "DynamicObject")
-        {
-            if (intensity == 1f)
-            {
-
-                mText.text = "Hurray! you have won the game. To play the game again press start button.";
-                sphere.transform.position = new UnityEngine.Vector3(-1.20899999f, 0.927100003f, 1421f);
-                gameStarted = false;
-                startButton.SetActive(true);
-                intensity = 0.8f;
-                return;
-            }
-            intensity = intensity + 0.1f;
-            WeightIncreaseInst.text = $"Weight +100Gms";
-            WeightDecreaseInst.text = $"";
-            StartCoroutine(ClearGameInst(WeightIncreaseInst));
-
-        }
-        else
-        {
-            if (intensity == 0.6f)
-            {
-                mText.text = "You have lost the game. The ball reached its minimum weight. To restart the game press start button.";
-                sphere.transform.position = new UnityEngine.Vector3(-1.20899999f, 0.927100003f, 1421f);
-                gameStarted = false;
-                startButton.SetActive(true);
-                gameStarted = false;
-                intensity = 0.8f;
-                return;
-            }
-            intensity = intensity - 0.1f;
-            WeightIncreaseInst.text = "";
-            WeightDecreaseInst.text = $"Weight -100gms";
-            StartCoroutine(ClearGameInst(WeightDecreaseInst));
-        }
-    }
-
-    IEnumerator ClearGameInst(TextMeshPro TMPObject)
-    {
-        yield return new WaitForSeconds(2f);
-        TMPObject.text = "";
-    }
-}
+ }
