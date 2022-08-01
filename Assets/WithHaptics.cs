@@ -198,6 +198,7 @@ public class WithHaptics : MonoBehaviour
             if (intensity == 1f)
             {
                 mText.text = "Hurray! You have won the game. To play the game again, press the start button.";
+                cubeBlue.GetComponent<SwingFR>().decreaseSpeed();
                 sphere.transform.position = new UnityEngine.Vector3(-1.227f, 0.870999992f, 1421.06165f);
                 _emitter.stop();
                 sphere.GetComponent<Rigidbody>().useGravity = false;
@@ -211,7 +212,6 @@ public class WithHaptics : MonoBehaviour
             
             cubeBlue.GetComponent<SwingFR>().increaseSpeed();
             StartCoroutine(ClearGameInst(WeightIncreaseInst));
-
         }
         else
         {
