@@ -7,7 +7,7 @@ public class SwingFR : MonoBehaviour
     public GameObject[] waypoints;
     int current = 0;
     float rotSpeed;
-    public float speed= 0.5f;
+    public float speed= 0.4f;
     public float WPRadius= 0.09f;
     // Start is called before the first frame update
     
@@ -24,6 +24,17 @@ public class SwingFR : MonoBehaviour
         transform.position = Vector3.MoveTowards(transform.position, waypoints[current].transform.position, Time.deltaTime * speed);
     }
 
-    
-   
+    public void increaseSpeed() {
+        speed = speed + 0.04f;
+    }
+
+    public void decreaseSpeed()
+    {
+        speed = speed - 0.04f;
+    }
+
+    public void resetSpeed()
+    {
+        speed = 0.4f;
+    }
 }

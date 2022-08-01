@@ -139,18 +139,18 @@ public class ExperimentController : MonoBehaviour
             buttons.SetActive(false);
 
             firstSphereProcessed = false;
-            mText.text = "This is the first ball for the new case. please press trigger button to make it fall on your hand.";
+            mText.text = "This is the first ball for the new case. Please press trigger button to make it fall on your hand.";
             if (MainData.Count == 0)
             {
                 if (demo) {
                     experiment_over = true;
-                    mText.text = "Demo is over do you have any questions?";
+                    mText.text = "Demo is over. Please ask the experimenter any questions if you have any. Please remove the headset";
                     return true;
                 }
                 File.AppendAllText(@"D://Users/Anuj Sharma/Documents/MidAirWeightPerception/MidAirWeightPerception/answers.json", Valve.Newtonsoft.Json.JsonConvert.SerializeObject(answers) + System.Environment.NewLine);
                 experiment_over = true;
                 mText.fontSize = 8;
-                mText.text = "Experiment is over. Please wait we will play a game now.";
+                mText.text = "Experiment is over. Please wait we will play a game now. You can remove the headset for a short break.";
 
             }
 
@@ -169,7 +169,7 @@ public class ExperimentController : MonoBehaviour
         currentValues = MainData[index];
         intensity = currentValues[0];
         intensity2 = currentValues[1];
-        mText.text = "This ball will be on your hand for 2 seconds, and then it will disappear.";
+        mText.text = "This ball will be on your palm for 2 seconds, and then it will disappear.";
         MainData.RemoveAt(index);
         //print("Inside Sphere Coroutine");
         sphere.GetComponent<Rigidbody>().useGravity = true;
@@ -181,7 +181,7 @@ public class ExperimentController : MonoBehaviour
         print("gravity false 2");
 
         _emitter.stop();
-        mText.text = "This is the second ball, press the trigger button to make it fall on your hand.";
+        mText.text = "This is the second ball, press the trigger button to make it fall on your palm.";
         firstSphereProcessed = true;
         reject_trigger_press = false;
     }
@@ -193,7 +193,7 @@ public class ExperimentController : MonoBehaviour
         reject_trigger_press = true;
         intensity = intensity2;
         print("processing second ball");
-        mText.text = "This ball will be on your hand for 2 seconds, and then it will disappear.";
+        mText.text = "This ball will be on your palm for 2 seconds, and then it will disappear.";
         //print("Inside Sphere Coroutine");
         sphere.GetComponent<Rigidbody>().useGravity = true;
         //print("Gravity True");
@@ -269,8 +269,8 @@ public class ExperimentController : MonoBehaviour
     {
         MainData.Add(new float[2] { 0.6f, 0.8f });
         MainData.Add(new float[2] { 1.0f, 0.8f });
-        if (demo) { return; }
         MainData.Add(new float[2] { 0.6f, 1.0f });
+        if (demo) { return; }
         MainData.Add(new float[2] { 0.5f, 1.0f });
         MainData.Add(new float[2] { 0.5f, 0.6f });
         MainData.Add(new float[2] { 0.7f, 0.6f });
