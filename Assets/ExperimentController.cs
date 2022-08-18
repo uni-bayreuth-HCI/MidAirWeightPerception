@@ -24,7 +24,7 @@ public class ExperimentController : MonoBehaviour
     public bool demo;
     List<string> currentCollisions = new List<string>();
 
-    private float intensity;
+    public float intensity;
     private float intensity2;
     private bool firstSphereProcessed = false;
     public SteamVR_LaserPointer laserPointer;
@@ -113,7 +113,7 @@ public class ExperimentController : MonoBehaviour
         }
         else if (leftHand == null)
         {
-            mText.text = "Please place your left hand on white paper, and make sure it is detected correctly in the scene. Try to remove and keep the hand again, or spread your fingers";
+            mText.text = "Please place your left hand on blue screen, and make sure it is detected correctly in the scene. Try to remove and keep the hand again, or spread your fingers. Press trigger button after your hand is detected.";
         }
     }
 

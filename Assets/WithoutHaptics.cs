@@ -120,7 +120,7 @@ public class WithoutHaptics : MonoBehaviour
         /*if left hand is null and left hand is active and sphere gravity is disabled then enable gravity*/
         else if (leftHand == null)
         {
-            mText.text = "Please place your left hand on white paper, and make sure " +
+            mText.text = "Please place your left hand on blue screen, and make sure " +
                 "it is detected correctly in the scene. Try to remove and keep the hand " +
                 "again, or spread your fingers.";
         }
