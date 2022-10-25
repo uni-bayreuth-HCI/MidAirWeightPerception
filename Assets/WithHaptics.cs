@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using System.Linq;
 using UnityEngine;
 using TMPro;
@@ -11,6 +12,7 @@ using System;
 
 public class WithHaptics : MonoBehaviour
 {
+    
     public SteamVR_ActionSet m_ActionSet;
     public SteamVR_Action_Boolean m_BooleanAction;
     public float frequency = 200f;
@@ -33,11 +35,14 @@ public class WithHaptics : MonoBehaviour
 
     GameObject startButton;
     GameObject sphere;
-
+    public int level = 1;
     float[] currentValues;
     Dictionary<float[], float> answers = new Dictionary<float[], float>();
     private string selected;
     private bool answering = false;
+
+    List<string> BallPosition = new List<string>();
+    
 
     void Start()
     {
@@ -81,6 +86,11 @@ public class WithHaptics : MonoBehaviour
             //print("on collision exit hand");
             _emitter.stop();
         }
+        if (sphere.transform.position.y > 0.9) {
+            _emitter.stop();
+        }
+        
+        
         GameObject leftHand = GameObject.Find("LoPoly Rigged Hand Left");
 
         if (!sphere.GetComponent<Rigidbody>().useGravity)
@@ -93,6 +103,10 @@ public class WithHaptics : MonoBehaviour
         }
         if (gameStarted && leftHand != null && leftHand.activeSelf)
         {
+            BallPosition.Add("SpherePosition:"+sphere.transform.position.ToString() + "|BlueCubePositionX:" + 
+                        cubeBlue.transform.position.x + ": BlueCubeSpeed:" + cubeBlue.GetComponent<SwingFR>().speed + "level" + level);
+           
+
             sphere.GetComponent<Rigidbody>().useGravity = true;
         }
 
@@ -105,7 +119,7 @@ public class WithHaptics : MonoBehaviour
     private void TriggerButtonClicked()
     {
         GameObject leftHand = GameObject.Find("LoPoly Rigged Hand Left");
-        print(selected);
+        
         if (leftHand != null && leftHand.activeSelf && selected == "StartButton")
         {
             startButton.SetActive(false);
@@ -113,7 +127,6 @@ public class WithHaptics : MonoBehaviour
             sphere.GetComponent<Rigidbody>().useGravity = true;
             intensity = 0.7f;
             mText.text = "";
-            
         }
 
 
@@ -130,6 +143,7 @@ public class WithHaptics : MonoBehaviour
 
     void OnCollisionEnter(Collision collision)
     {
+        BallPosition.Add(collision.gameObject.name);
         currentCollisions.Add(collision.gameObject.name);
         if (collision.gameObject.name == "NFloor")
         {
@@ -153,9 +167,14 @@ public class WithHaptics : MonoBehaviour
     {
         if (collision.gameObject.name == "Contact Fingerbone" || collision.gameObject.name == "Contact Palm Bone")
         {
+
             Ultrahaptics.Vector3 position = new Ultrahaptics.Vector3(0.0f, 0.0f, 0.2f);
             AmplitudeModulationControlPoint point = new AmplitudeModulationControlPoint(position, intensity, 180f);
             _emitter.update(new List<AmplitudeModulationControlPoint> { point });
+            BallPosition.Add("On Hand");
+        }
+        else {
+            _emitter.stop();
         }
     }
 
@@ -167,11 +186,11 @@ public class WithHaptics : MonoBehaviour
 
         if (!IsobjectStillTouchingHand())
         {
-            //print("on collision exit hand");
             _emitter.stop();
+            
         }
     }
-
+    
 
     private bool IsobjectStillTouchingHand()
     {
@@ -193,11 +212,13 @@ public class WithHaptics : MonoBehaviour
 
     private void ChnageSphereWeight(string collisionName)
     {
+        
         if (collisionName == "DynamicObject")
         {
             if (intensity == 1f)
             {
-                mText.text = "Hurray! You have won the game. To play the game again, press the start button.";
+                level++;
+                mText.text = "Hurray! You have won the game. You have reached level " + level + ". To play the this, press the start button.";
                 cubeBlue.GetComponent<SwingFR>().decreaseSpeed();
                 sphere.transform.position = new UnityEngine.Vector3(-1.227f, 0.870999992f, 1421.06165f);
                 _emitter.stop();
@@ -215,11 +236,12 @@ public class WithHaptics : MonoBehaviour
         }
         else
         {
-            print(intensity);
-            print((float)Math.Floor(intensity * 10));
+            
+            
             if ((float)Math.Floor(intensity * 10) == 5)
             {
-                mText.text = "You have lost the game. The ball reached its minimum weight. To restart the game, press the start button.";
+                level--;
+                mText.text = "You have lost the game. The ball reached its minimum weight. To replay Level "+ level +", press the start button.";
                 sphere.transform.position = new UnityEngine.Vector3(-1.227f, 0.870999992f, 1421.06165f);
                 _emitter.stop();
                 sphere.GetComponent<Rigidbody>().useGravity = false;
@@ -240,5 +262,10 @@ public class WithHaptics : MonoBehaviour
     {
         yield return new WaitForSeconds(2f);
         TMPObject.text = "";
+    }
+
+    public void OnApplicationQuit() {
+        File.AppendAllText(@"D://Users/Anuj Sharma/Documents/MidAirWeightPerception/MidAirWeightPerception/dataWithHaptics.txt", 
+            Valve.Newtonsoft.Json.JsonConvert.SerializeObject(BallPosition) + System.Environment.NewLine);
     }
 }
